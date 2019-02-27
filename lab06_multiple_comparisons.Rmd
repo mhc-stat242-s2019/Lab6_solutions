@@ -1,0 +1,168 @@
+---
+title: "Lab06 - multiple comparisons"
+output: pdf_document
+---
+
+## Goals
+
+The goal in this lab is to practice finding familywise conidence intervals for multiple comparisons.
+
+## Loading packages
+
+Here are some packages with functionality you may need for this lab.  Run this code chunk now.
+
+```{r}
+library(readr)
+library(ggplot2)
+library(gridExtra)
+library(mosaic)
+library(dplyr)
+library(gmodels)
+
+options("pillar.sigfig" = 10) # print 10 significant digits in summarize output
+
+longevity <- read_csv("http://www.evanlray.com/data/sleuth3/ex0501_longevity.csv") %>%
+  mutate(
+    Diet = factor(Diet, levels = c("NP", "N/N85", "N/R50", "R/R50", "lopro", "N/R40"))
+  )
+
+nrow(longevity)
+```
+
+#### Find the multiplier that would be used for Bonferroni 95% familywise intervals for 5 comparisons based on this data set.
+
+```{r}
+1 - 0.05/(2 * 5)
+qt(0.995, df = 349 - 6)
+```
+
+#### Find the multiplier that would be used for Scheffe 95% familywise intervals for 5 comparisons based on this data set.
+
+```{r}
+sqrt((6-1) * qf(0.95, df1 = 6-1, df2 = 349 - 6))
+```
+
+
+#### Find familywise 95% Confidence Intervals
+
+The code below finds individual 95% confidence intervals for the 5 differences in group means the researchers planned for this study.  For each, add calculations of appropriately adjusted Bonferroni and Scheffe familywise intervals.
+
+```{r}
+anova_fit <- lm(Lifetime ~ Diet, data = longevity)
+```
+
+#### (a) $H_0: \mu_2 = \mu_3$ vs $H_A: \mu_2 \neq \mu_3$.  Are the population mean lifetimes the same for the \textbf{N/N85} and \textbf{N/R50} groups?
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 1, -1, 0, 0, 0), conf.int = 0.95)
+
+# Bonferroni intervals
+-9.605955 - 2.59 * 1.187682
+-9.605955 + 2.59 * 1.187682
+
+# Scheffe intervals
+-9.605955 - 3.35 * 1.187682
+-9.605955 + 3.35 * 1.187682
+```
+
+Here's an easier way to find the Bonferroni interval.  To get a familywise 95% CI for five intervals, each confidence interval will have an individual confidence level of $(1 - 0.05/5) \times 100\%$, or 99%.  Therefore, the following code to get an individual 99% CI will give us the first of 5 intervals with a familywise confidence level of 95%:
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 1, -1, 0, 0, 0), conf.int = 0.99)
+```
+
+Note that this result agrees with our manual calculation above, up to rounding errors.
+
+#### (b) $H_0: \mu_3 = \mu_4$ vs $H_A: \mu_3 \neq \mu_4$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{R/R50} groups?
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, -1, 0, 0), conf.int = 0.95)
+
+# Bonferroni intervals
+-0.5885312 - 2.59 * 1.19355
+-0.5885312 + 2.59 * 1.19355
+
+# Scheffe intervals
+-0.5885312 - 3.35 * 1.19355
+-0.5885312 + 3.35 * 1.19355
+```
+
+Or, the easier way for the Bonferroni interval:
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, -1, 0, 0), conf.int = 0.99)
+```
+
+#### (c) $H_0: \mu_3 = \mu_6$ vs $H_A: \mu_3 \neq \mu_6$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{N/R40} groups?
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, 0, 0, -1), conf.int = 0.95)
+
+# Bonferroni intervals
+-2.819484 - 2.59 * 1.171097
+-2.819484 + 2.59 * 1.171097
+
+# Scheffe intervals
+-2.819484 - 3.35 * 1.171097
+-2.819484 + 3.35 * 1.171097
+```
+
+
+Or, the easier way for the Bonferroni interval:
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, 0, 0, -1), conf.int = 0.99)
+```
+
+#### (d) $H_0: \mu_3 = \mu_5$ vs $H_A: \mu_3 \neq \mu_5$.  Are the population mean lifetimes the same for the \textbf{N/R50} and \textbf{N/R50} lopro groups?
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, 0, -1, 0), conf.int = 0.95)
+
+# Bonferroni intervals
+2.611469 - 2.59 * 1.19355
+2.611469 + 2.59 * 1.19355
+
+# Scheffe intervals
+2.611469 - 3.35 * 1.19355
+2.611469 + 3.35 * 1.19355
+```
+
+Or, the easier way for the Bonferroni interval:
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(0, 0, 1, 0, -1, 0), conf.int = 0.99)
+```
+
+#### (e) $H_0: \mu_2 = \mu_1$ vs $H_A: \mu_2 \neq \mu_1$.  Are the population mean lifetimes the same for the \textbf{N/N85} and \textbf{NP} groups?
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(-1, 1, 0, 0, 0, 0), conf.int = 0.95)
+
+# Bonferroni intervals
+5.289187 - 2.59 * 1.301006
+5.289187 + 2.59 * 1.301006
+
+# Scheffe intervals
+5.289187 - 3.35 * 1.301006
+5.289187 + 3.35 * 1.301006
+```
+
+Or, the easier way for the Bonferroni interval:
+
+```{r}
+fit.contrast(anova_fit, "Diet", c(-1, 1, 0, 0, 0, 0), conf.int = 0.99)
+```
+
+#### What is the interpretation of the individual 95% confidence interval obtained in part (a) from the fit.contrast function?
+
+We are 95% confident that the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups is between -11.942 and -7.270.  For 95% of samples, an interval calculated in this way will contain the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups.
+
+#### What is the interpretation of the Bonferroni intervals?  
+
+We are 95% confident that the difference in population mean lifetimes for the \textbf{N/N85} and \textbf{N/R50} groups is between -12.68 and -6.53, for the \textbf{N/R50} and \textbf{R/R50} groups is between -3.68 and 2.50, for the \textbf{N/R50} and \textbf{N/R40} groups is between -5.85 and 0.21, for the \textbf{N/R50} and \textbf{N/R50} lopro groups is between -0.48 and 5.70, and for the \textbf{N/N85} and \textbf{NP} groups is between 1.92 and 8.66.  For 95% of samples, all 5 of the intervals constructed in this way will simultaneously contain the difference in means they are estimating.
+
+
+
+
+
